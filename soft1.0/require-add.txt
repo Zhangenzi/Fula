@@ -1,0 +1,118 @@
+数据库设计
+
+
+-- 创建数据库
+CREATE DATABASE IF NOT EXISTS interview CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE interview;
+
+-- 用户表
+CREATE TABLE users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) UNIQUE NOT NULL COMMENT '学号/用户名',
+    password VARCHAR(255) NOT NULL COMMENT '密码哈希',
+    real_name VARCHAR(50) COMMENT '真实姓名',
+    email VARCHAR(100) COMMENT '邮箱',
+    phone VARCHAR(20) COMMENT '手机号',
+    major VARCHAR(100) COMMENT '专业',
+    grade VARCHAR(20) COMMENT '年级',
+    avatar_url VARCHAR(255) COMMENT '头像URL',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 岗位表
+CREATE TABLE job_positions (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL COMMENT '岗位名称',
+    description TEXT COMMENT '岗位描述',
+    difficulty ENUM('初级', '中级', '高级') DEFAULT '中级',
+    duration INT DEFAULT 60 COMMENT '预计面试时长(分钟)',
+    icon VARCHAR(50) COMMENT '图标名称',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 面试记录表
+CREATE TABLE interview_records (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    job_position_id INT NOT NULL,
+    score INT DEFAULT 0 COMMENT '总分',
+    duration_minutes INT COMMENT '实际用时(分钟)',
+    status ENUM('进行中', '已完成', '已中断') DEFAULT '进行中',
+    start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_time TIMESTAMP NULL,
+    summary TEXT COMMENT '面试总结',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (job_position_id) REFERENCES job_positions(id)
+);
+
+-- 问题库表
+CREATE TABLE questions (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    job_position_id INT NOT NULL,
+    type ENUM('behavioral', 'technical', 'coding', 'scenario') NOT NULL,
+    title VARCHAR(500) NOT NULL,
+    description TEXT,
+    difficulty INT DEFAULT 3 COMMENT '难度等级1-5',
+    hint TEXT COMMENT '提示信息',
+    code_template TEXT COMMENT '代码模板',
+    tags JSON COMMENT '标签数组',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (job_position_id) REFERENCES job_positions(id)
+);
+
+-- 面试问题记录表
+CREATE TABLE interview_question_records (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    interview_record_id INT NOT NULL,
+    question_id INT NOT NULL,
+    question_order INT NOT NULL COMMENT '问题顺序',
+    answer_text TEXT COMMENT '文本回答',
+    answer_code TEXT COMMENT '代码回答',
+    programming_language VARCHAR(50) COMMENT '编程语言',
+    audio_file_path VARCHAR(255) COMMENT '录音文件路径',
+    score INT DEFAULT 0 COMMENT '单题得分',
+    time_spent INT COMMENT '答题用时(秒)',
+    is_skipped BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (interview_record_id) REFERENCES interview_records(id) ON DELETE CASCADE,
+    FOREIGN KEY (question_id) REFERENCES questions(id)
+);
+
+-- 技能评估表
+CREATE TABLE skill_assessments (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    interview_record_id INT NOT NULL,
+    skill_name VARCHAR(100) NOT NULL,
+    score INT NOT NULL COMMENT '技能得分',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (interview_record_id) REFERENCES interview_records(id) ON DELETE CASCADE
+);
+
+-- 插入岗位数据
+INSERT INTO job_positions (name, description, difficulty, duration, icon) VALUES
+('前端开发工程师', 'Vue.js、React、JavaScript等前端技术栈面试', '中级', 30, 'Monitor'),
+('后端开发工程师', 'Java、Python、数据库等后端技术面试', '中级', 45, 'Server'),
+('人工智能工程师', '机器学习、深度学习、算法等AI技术面试', '高级', 60, 'Cpu'),
+('大数据工程师', 'Hadoop、Spark、数据处理等大数据技术面试', '高级', 50, 'DataAnalysis'),
+('产品经理', '产品设计、用户体验、项目管理等综合面试', '中级', 40, 'Management'),
+('UI/UX设计师', '界面设计、用户体验、设计工具等设计面试', '初级', 35, 'Brush');
+
+-- 插入示例问题（人工智能工程师）
+INSERT INTO questions (job_position_id, type, title, description, difficulty, hint, tags) VALUES
+(3, 'behavioral', '请简单介绍一下您自己', '请用3-5分钟的时间介绍您的教育背景、技能特长、项目经验以及为什么对这个岗位感兴趣。', 2, '可以按照教育背景 → 技能特长 → 项目经验 → 职业目标的顺序来组织回答', '["自我介绍", "基础问题"]'),
+(3, 'technical', '什么是机器学习？请解释监督学习和无监督学习的区别', '请详细解释机器学习的概念，并说明监督学习和无监督学习的主要区别，各自的应用场景。', 3, '可以从定义、数据特点、算法类型、应用场景等角度来对比', '["机器学习", "基础概念"]'),
+(3, 'coding', '实现一个简单的线性回归算法', '请用您熟悉的编程语言实现一个简单的线性回归算法，包括训练和预测功能。', 4, '可以使用梯度下降法来优化参数，注意处理数据的标准化', '["算法实现", "线性回归"]'),
+(3, 'scenario', '如何处理数据不平衡问题？', '在实际项目中，经常会遇到数据不平衡的问题。请描述您会如何识别和解决这类问题。', 4, '可以从数据层面、算法层面、评估层面来考虑解决方案', '["数据处理", "实际应用"]'),
+(3, 'behavioral', '描述一次您解决技术难题的经历', '请详细描述一次您在项目中遇到技术难题并成功解决的经历，包括问题的背景、解决过程和最终结果。', 3, '可以使用STAR法则来组织回答：情境、任务、行动、结果', '["问题解决", "项目经验"]');
+
+
+- 用户管理 ：扩展的用户表，支持完整的用户信息
+- 岗位管理 ：动态的岗位配置
+- 面试记录 ：完整的面试过程记录
+- 问题库 ：灵活的问题管理系统
+- 答题记录 ：详细的答题过程和结果
+- 技能评估 ：多维度的能力评估
