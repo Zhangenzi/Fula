@@ -1,5 +1,5 @@
 <template>
-  <div class="home-wrapper">
+  <div class="home-wrapper full-screen">
     <!-- 顶部导航栏 -->
     <header class="header">
       <div class="header-content">
@@ -10,14 +10,14 @@
         <div class="user-info">
           <el-dropdown @command="handleCommand">
             <span class="user-avatar">
-              <el-icon><User /></el-icon>
               <span>{{ userInfo.name }}</span>
-              <el-icon class="el-icon--right"><arrow-down /></el-icon>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="profile">个人中心</el-dropdown-item>
                 <el-dropdown-item command="history">面试记录</el-dropdown-item>
+                <el-dropdown-item command="analysis">能力分析</el-dropdown-item>
+                <el-dropdown-item command="tips">面试技巧</el-dropdown-item>
                 <el-dropdown-item command="settings">设置</el-dropdown-item>
                 <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
@@ -118,15 +118,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted,computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 import {
   ChatDotRound,
   User,
+  Calendar, 
   ArrowDown,
+  Trophy,
   Star,
   BrushFilled,
+  Clock,
   VideoPlay,
   Lightning,
   Document,
@@ -135,20 +139,75 @@ import {
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const userStore = useUserStore()
 
-// 用户信息
-const userInfo = ref({
-  name: '张同学',
-  avatar: '',
-  level: '初级'
+// 使用计算属性获取完整用户信息
+const userInfo = computed(() => {
+  const user = userStore.user
+  if (!user) {
+    return {
+      name: '用户',
+      realName: '',
+      avatar: '',
+      level: '初级',
+      major: '',
+      grade: '',
+      email: ''
+    }
+  }
+  
+  return {
+    name: user.username, // 用户名/学号
+    realName: user.real_name || '', // 真实姓名
+    avatar: user.avatar_url || '', // 头像URL
+    level: '初级', // 可以根据统计数据动态计算
+    major: user.major || '', // 专业
+    grade: user.grade || '', // 年级
+    email: user.email || '' // 邮箱
+  }
 })
+
+// 使用计算属性获取用户统计
+const userStats = computed(() => ({
+  totalInterviews: userStore.stats?.total_interviews || 0,
+  completedInterviews: userStore.stats?.completed_interviews || 0,
+  averageScore: userStore.stats?.average_score || 0
+}))
+
+// 组件挂载时确保数据加载
+onMounted(async () => {
+  // 如果没有用户信息，从数据库获取
+  if (!userStore.user && userStore.token) {
+    await userStore.fetchUserProfile()
+  }
+  // 获取用户统计数据
+  if (!userStore.stats && userStore.token) {
+    await userStore.fetchUserStats()
+  }
+  console.log('用户信息:', userStore.user)
+  console.log('用户统计:', userStore.stats)
+})
+
+
+
 
 // 统计数据
-const stats = ref({
-  totalInterviews: 12,
-  avgScore: 85,
-  completedJobs: 3
-})
+const stats = computed(() => {
+  const userStats = userStore.stats;
+  if (!userStats) {
+    return {
+      totalInterviews: 0,
+      avgScore: 0,
+      completedJobs: 0
+    };
+  }
+  
+  return {
+    totalInterviews: userStats.total_interviews || 0,
+    avgScore: Math.round(userStats.average_score || 0),
+    completedJobs: userStats.completed_interviews || 0
+  };
+});
 
 // 岗位数据
 const jobs = ref([
@@ -156,7 +215,7 @@ const jobs = ref([
     id: 1,
     name: '前端开发工程师',
     description: 'Vue.js、React、JavaScript等前端技术栈面试',
-    icon: 'Monitor',
+    icon: 'Web Front-End',
     difficulty: '中级',
     duration: '30分钟'
   },
@@ -172,9 +231,9 @@ const jobs = ref([
     id: 3,
     name: '人工智能工程师',
     description: '机器学习、深度学习、算法等AI技术面试',
-    icon: 'Cpu',
+    icon: 'AI Engineer',
     difficulty: '高级',
-    duration: '60分钟'
+    duration: '30分钟'
   },
   {
     id: 4,
@@ -216,6 +275,12 @@ const handleCommand = (command) => {
       break
     case 'history':
       goToHistory()
+      break
+    case 'analysis':
+      router.push('/analysis')
+      break
+    case 'tips':
+      router.push('/tips')
       break
     case 'settings':
       ElMessage.info('设置功能开发中...')
@@ -259,12 +324,18 @@ onMounted(() => {
 <style scoped>
 .home-wrapper {
   min-height: 100vh;
-  width: 100%; 
+  width: 100vw; 
   height: auto;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   background-size: cover; 
   background-repeat: no-repeat; 
-  position: relative;
+  position: fixed; /* 固定定位 */
+  top: 0px; 
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  overflow-y: auto; /* 允许滚动 */
 }
 
 .home-wrapper::before {
@@ -282,7 +353,7 @@ onMounted(() => {
 .header {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -322,11 +393,23 @@ onMounted(() => {
   border-radius: 25px;
   background: rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
+  /* 添加以下样式来移除黑色边框 */
+  outline: none !important;
+  border: none !important;
 }
 
 .user-avatar:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
+}
+/* 移除 Element Plus dropdown 的默认 focus 样式 */
+.el-dropdown {
+  outline: none !important;
+}
+
+.el-dropdown:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 /* 主要内容区域 */
@@ -455,6 +538,9 @@ onMounted(() => {
 .job-icon {
   color: #ffd700;
   margin-bottom: 20px;
+  width: auto;
+  min-width: 200px;
+  white-space: nowrap;
 }
 
 .job-title {
@@ -588,5 +674,46 @@ onMounted(() => {
     flex-direction: column;
     gap: 15px;
   }
+}
+.user-detail-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 20px;
+  margin: 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.default-avatar {
+  font-size: 30px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.user-details {
+  flex: 1;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.user-details p {
+  margin: 5px 0;
+  font-size: 14px;
 }
 </style>

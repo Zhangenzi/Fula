@@ -156,7 +156,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # 启动后端服务
-python app.py
+终端进入backend文件夹    运行  python app.py
 ```
 
 后端服务将在 `http://localhost:5000` 启动

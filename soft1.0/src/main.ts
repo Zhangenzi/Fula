@@ -1,10 +1,9 @@
-import './assets/styles/style.css'  // 添加这行
-
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
-import 'element-plus/dist/index.css'
+import 'element-plus/dist/index.css'  // Element Plus样式先导入
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+import './assets/styles/style.css'  // 全局样式后导入
 
 import App from './App.vue'
 import router from './router'

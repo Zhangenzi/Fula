@@ -9,9 +9,12 @@ created_at: string;
 }
 
 interface UserStats {
-total_interviews: number;
-completed_interviews: number;
-average_score: number;
+    total_interviews: number;
+    completed_interviews: number;
+    average_score: number;
+    total_time_minutes: number;
+    best_score: number;
+    skill_assessments: any[];
 }
 
 export const useUserStore = defineStore('user', {
@@ -44,11 +47,16 @@ actions: {
 
     async register(username: string, password: string, email: string) {
     try {
-        const response = await api.register(username, password, email);
+        // 修改：传递对象而不是独立参数
+        const response = await api.register({
+            username,
+            password,
+            email
+        });
         if (response.code === 200) {
-        return { success: true };
+            return { success: true };
         } else {
-        return { success: false, message: response.msg };
+            return { success: false, message: response.msg };
         }
     } catch (error) {
         return { success: false, message: '注册失败，请检查网络连接' };
