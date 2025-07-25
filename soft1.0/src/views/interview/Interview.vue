@@ -29,7 +29,9 @@
         <el-card class="question-card">
         <div class="question-header">
             <div class="question-type">
-            <el-icon>{{ getQuestionIcon(currentQuestion.type) }}</el-icon>
+                <el-icon>
+                    <component :is="getQuestionIcon(currentQuestion.type)" />
+                </el-icon>
             <span>{{ getQuestionTypeName(currentQuestion.type) }}</span>
             </div>
             <div class="question-difficulty">
@@ -492,9 +494,12 @@ timer = setInterval(() => {
 onMounted(() => {
 // 根据路由参数设置岗位信息
 const positionMap = {
-    '1': { name: '人工智能工程师', difficulty: '中级', duration: 60 },
-    '2': { name: '大数据工程师', difficulty: '高级', duration: 90 },
-    '3': { name: '物联网开发工程师', difficulty: '初级', duration: 45 }
+    '1': { name: '前端开发工程师', difficulty: '中级', duration: 30 },
+    '2': { name: '后端开发工程师', difficulty: '高级', duration: 45 },
+    '3': { name: '人工智能工程师', difficulty: '初级', duration: 30 },
+    '4': { name: '大数据工程师', difficulty: '高级', duration: 50 },
+    '5': { name: '产品经理', difficulty: '中级', duration: 40 },
+    '6': { name: 'UI/UX设计师', difficulty: '初级', duration: 35 }
 }
 
 const position = positionMap[route.params.id as keyof typeof positionMap]
@@ -523,10 +528,18 @@ flex-direction: column;
 }
 
 .top-info {
-background: rgba(255, 255, 255, 0.95);
-backdrop-filter: blur(10px);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 padding: 1rem 2rem;
 box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.bottom-actions {
+background: linear-gradient(0deg, #ffffff 0%, #f8f9fa 100%);
+padding: 1.5rem 2rem;
+display: flex;
+justify-content: space-between;
+align-items: center;
+box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .interview-header {
@@ -722,7 +735,7 @@ animation-delay: 0.1s;
 }
 
 .bottom-actions {
-background: rgba(255, 255, 255, 0.95);
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 backdrop-filter: blur(10px);
 padding: 1.5rem 2rem;
 display: flex;

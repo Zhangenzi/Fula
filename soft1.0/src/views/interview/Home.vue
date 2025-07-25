@@ -111,6 +111,12 @@
             <h3>面试技巧</h3>
             <p>学习面试技巧和常见问题</p>
           </div>
+          <!-- 嵌入大模型demo -->
+          <div class="action-card" @click="goDemo">
+            <el-icon class="action-icon"><InfoFilled /></el-icon>
+            <h3>AI面试</h3>
+            <p>智能体面试</p>
+          </div>
         </div>
       </section>
     </main>
@@ -187,8 +193,6 @@ onMounted(async () => {
   console.log('用户信息:', userStore.user)
   console.log('用户统计:', userStore.stats)
 })
-
-
 
 
 // 统计数据
@@ -306,6 +310,10 @@ const goToAnalysis = () => {
 
 const goToTips = () => {
   router.push('/tips')
+}
+
+const goDemo = () => {
+  router.push('/AIchatDemo')
 }
 
 // 退出登录
